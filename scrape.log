@@ -1,0 +1,33 @@
+1/4 Leyendo sitemap...
+    sitemap: 151 colecciones, 1947 productos
+2/4 Extrayendo categorias (hasta 4 paginas por coleccion)...
+    colecciones 25/151
+    colecciones 50/151
+    colecciones 75/151
+    colecciones 100/151
+    colecciones 125/151
+    colecciones 150/151
+3/4 Extrayendo productos...
+    productos 100/1947
+    productos 200/1947
+    productos 300/1947
+    productos 400/1947
+    productos 500/1947
+    productos 600/1947
+    productos 700/1947
+    productos 800/1947
+    productos 900/1947
+    productos 1000/1947
+    productos 1100/1947
+    productos 1200/1947
+    productos 1300/1947
+    productos 1400/1947
+    productos 1500/1947
+    productos 1600/1947
+    productos 1700/1947
+    productos 1800/1947
+    productos 1900/1947
+4/4 Guardando...
+
+OK -> data/catalog.json
+   1945 productos, 151 categorias, 0 sin precio
