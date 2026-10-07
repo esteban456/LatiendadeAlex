@@ -6,6 +6,15 @@ const productForm = $('#product-form');
 const editor = $('#product-editor');
 const ordersState = { offset: 0, limit: 30, total: 0, query: '', status: '' };
 
+$('.admin-side-nav').addEventListener('click', (event) => {
+  const link = event.target.closest('a[href^="#"]');
+  if (!link) return;
+  $('.admin-side-nav .active')?.classList.remove('active');
+  $('.admin-side-nav [aria-current="page"]')?.removeAttribute('aria-current');
+  link.classList.add('active');
+  link.setAttribute('aria-current', 'page');
+});
+
 function escapeHtml(value = '') {
   return String(value).replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
 }
@@ -118,7 +127,12 @@ function showEditor(product = null) {
   $('#edit-title').textContent = product ? 'Editar producto' : 'Agregar producto';
   $('#field-name').value = product?.name || '';
   $('#field-brand').value = product?.brand || '';
-  $('#field-price').value = product?.price || '';
+  const contado = product?.variants?.find((variant) => /contado/i.test(variant.label)) || product?.variants?.find((variant) => /precio único/i.test(variant.label));
+  const credito = product?.variants?.find((variant) => /cr[eé]dito/i.test(variant.label));
+  $('#field-price').value = contado?.price || product?.price || '';
+  $('#field-credit-enabled').checked = product ? Boolean(credito) : true;
+  $('#field-credit-price').value = credito?.price || product?.maxPrice || contado?.price || product?.price || '';
+  $('#field-credit-price').disabled = !$('#field-credit-enabled').checked;
   $('#field-stock').value = product?.stock ?? 0;
   $('#field-category').value = product?.categories?.[0]?.name || '';
   $('#field-description').value = product?.description || '';
@@ -422,6 +436,8 @@ productForm.addEventListener('submit', async (event) => {
     name: $('#field-name').value,
     brand: $('#field-brand').value,
     price: Number($('#field-price').value),
+    offerCredit: $('#field-credit-enabled').checked,
+    creditPrice: $('#field-credit-enabled').checked ? Number($('#field-credit-price').value || $('#field-price').value) : null,
     stock: Number($('#field-stock').value),
     category: $('#field-category').value,
     description: $('#field-description').value,
@@ -438,6 +454,11 @@ productForm.addEventListener('submit', async (event) => {
     await loadProducts();
   } catch (error) { notice(error.message, 'error'); }
   finally { button.disabled = false; button.textContent = 'Guardar producto'; }
+});
+
+$('#field-credit-enabled').addEventListener('change', (event) => {
+  $('#field-credit-price').disabled = !event.target.checked;
+  if (event.target.checked && !$('#field-credit-price').value) $('#field-credit-price').value = $('#field-price').value;
 });
 
 $('#field-image').addEventListener('input', () => {

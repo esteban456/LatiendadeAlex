@@ -26,6 +26,7 @@ async function main() {
   $('[data-crumb]').textContent = product.name;
 
   $('[data-product]').innerHTML = render(product);
+  updatePaymentChoice();
   bindAddButtons(catalog);
   renderRelated(catalog, product);
   injectSchema(product);
@@ -46,6 +47,7 @@ function render(product) {
   const images = (product.images?.length ? product.images : [product.image]).filter(Boolean).map(toWebp);
   const categories = (product.categories || []).slice(0, 3);
   const visibleVariants = (product.variants || []).filter((variant) => !variant.legacy);
+  const paymentVariants = visibleVariants.filter((variant) => /contado|cr[eé]dito/i.test(variant.label));
   const description = plainText(product.description) || `Consulta disponibilidad y detalles de ${product.name} con nuestro equipo.`;
   return `
     <div class="product">
@@ -93,7 +95,22 @@ function render(product) {
         ${product.stock > 0 ? `<p class="product-stock">${Number(product.stock)} unidades disponibles</p>` : ''}
 
         ${
-          visibleVariants.length > 1
+          paymentVariants.length > 1
+            ? `<section class="payment-choice" aria-labelledby="payment-choice-title">
+                <h2 id="payment-choice-title">¿Cómo quieres pagar?</h2>
+                <div class="variants payment-options">
+                  ${paymentVariants.map((v, i) => `<button class="variant payment-option ${v.sku === state.variant?.sku ? 'active' : ''}" data-variant="${escapeHtml(v.sku)}" ${v.available ? '' : 'disabled'} aria-pressed="${v.sku === state.variant?.sku}">
+                    <span><b>${/contado/i.test(v.label) ? 'Contado' : 'A crédito'}</b><small>${/contado/i.test(v.label) ? 'Pago en una sola vez' : 'Elige el plazo de pago'}</small></span><b>${money(v.price)}</b>
+                  </button>`).join('')}
+                </div>
+                <div class="installment-picker" data-installment-wrap hidden>
+                  <label for="installment-count">¿A cuántas cuotas?</label>
+                  <select id="installment-count" data-installment-count>${Array.from({ length: 12 }, (_, i) => `<option value="${i + 1}" ${i === 11 ? 'selected' : ''}>${i + 1} ${i === 0 ? 'cuota' : 'cuotas'}</option>`).join('')}</select>
+                  <p data-installment-estimate></p>
+                  <small>Valor estimado por cuota según el precio a crédito. Las condiciones finales dependen del medio de pago.</small>
+                </div>
+              </section>`
+            : visibleVariants.length > 1
             ? `<div class="variants">${visibleVariants
                 .map(
                   (v, i) => `
@@ -184,12 +201,17 @@ document.addEventListener('click', (event) => {
 
   const variantButton = event.target.closest('[data-variant]');
   if (variantButton) {
-    document.querySelectorAll('[data-variant]').forEach((b) => b.classList.remove('active'));
+    document.querySelectorAll('[data-variant]').forEach((b) => {
+      b.classList.remove('active');
+      b.setAttribute('aria-pressed', 'false');
+    });
     variantButton.classList.add('active');
     const found = (current.variants || []).find((v) => v.sku === variantButton.dataset.variant);
     if (found) {
       state.variant = found;
       $('.price-big').textContent = money(found.price);
+      variantButton.setAttribute('aria-pressed', 'true');
+      updatePaymentChoice();
     }
   }
 
@@ -206,6 +228,23 @@ document.addEventListener('click', (event) => {
     addToCart(current, state.variant, state.qty);
     location.href = 'carrito.html';
   }
+});
+
+function updatePaymentChoice() {
+  const wrap = $('[data-installment-wrap]');
+  if (!wrap || !state.variant) return;
+  const isCredit = /cr[eé]dito/i.test(state.variant.label);
+  wrap.hidden = !isCredit;
+  const select = $('[data-installment-count]');
+  const estimate = $('[data-installment-estimate]');
+  if (isCredit && select && estimate) {
+    const count = Number(select.value) || 12;
+    estimate.textContent = `${count} ${count === 1 ? 'cuota estimada de' : 'cuotas estimadas de'} ${money(Math.ceil(state.variant.price / count))}`;
+  }
+}
+
+document.addEventListener('change', (event) => {
+  if (event.target.matches('[data-installment-count]')) updatePaymentChoice();
 });
 
 main().catch((err) => {

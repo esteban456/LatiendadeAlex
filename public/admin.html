@@ -91,8 +91,18 @@
       </section>
     </main>
 
-    <main id="admin-app" class="wrap" hidden>
-      <section class="heading">
+    <main id="admin-app" class="admin-layout" hidden>
+      <aside class="admin-sidebar" aria-label="Secciones del panel">
+        <div class="sidebar-caption">ADMIN</div>
+        <nav class="admin-side-nav">
+          <a href="#admin-dashboard" class="active" aria-current="page"><span class="side-icon">01</span><span>Resumen</span></a>
+          <a href="#product-section"><span class="side-icon">02</span><span>Productos</span></a>
+          <a href="#orders-title"><span class="side-icon">03</span><span>Pedidos</span></a>
+        </nav>
+        <div class="sidebar-foot"><span class="status-dot"></span> Panel de la tienda</div>
+      </aside>
+      <div class="admin-main wrap">
+      <section class="heading admin-page-heading" id="admin-dashboard">
         <div><h1>Productos</h1><p>Busca, edita y agrega productos al catálogo.</p></div>
         <div class="count"><strong id="admin-total">0</strong> productos en el catálogo</div>
       </section>
@@ -105,6 +115,8 @@
       </section>
       <p class="orders-shortcut"><a href="#orders-title">Ver compras recientes</a></p>
       <div id="admin-notice-app" class="notice" role="status" hidden></div>
+      <div id="product-section" class="product-section">
+      <header class="section-title"><span class="section-kicker">CATALOGO</span><h2>Productos</h2><p>Administra precios, inventario y disponibilidad.</p></header>
       <section class="toolbar"><input id="product-search" class="search" type="search" placeholder="Buscar por nombre, marca, categoría o ID…" /><button id="new-product" class="button">＋ Agregar producto</button></section>
       <section class="admin-filters" aria-label="Filtros del catálogo">
         <select id="category-filter" aria-label="Filtrar por categoría"><option value="">Todas las categorías</option></select>
@@ -123,6 +135,7 @@
         </table></div>
         <footer class="pagination"><span id="page-label">0 productos</span><div><button id="page-prev" class="small-button">Anterior</button><button id="page-next" class="small-button">Siguiente</button></div></footer>
       </section>
+      </div>
       <section class="orders-section" aria-labelledby="orders-title">
         <div class="heading orders-heading"><div><h1 id="orders-title">Pedidos y compras</h1><p>Consulta las compras, revisa la entrega y contacta al cliente.</p></div><button id="refresh-orders" class="button secondary" type="button">Actualizar pedidos</button></div>
         <div class="admin-stats order-stats" aria-label="Resumen de pedidos">
@@ -143,6 +156,7 @@
           <footer class="pagination"><span id="orders-page-label">0 pedidos</span><div><button id="orders-prev" class="small-button">Anterior</button><button id="orders-next" class="small-button">Siguiente</button></div></footer>
         </section>
       </section>
+      </div>
     </main>
 
     <div id="product-editor" class="modal" hidden>
@@ -153,7 +167,9 @@
           <div class="form-grid">
             <div class="field"><label for="field-name">Nombre *</label><input id="field-name" maxlength="180" required /></div>
             <div class="field"><label for="field-brand">Marca</label><input id="field-brand" maxlength="100" /></div>
-            <div class="field"><label for="field-price">Precio en pesos *</label><input id="field-price" type="number" min="1" step="1" required /></div>
+            <div class="field"><label for="field-price">Precio de contado (pesos) *</label><input id="field-price" type="number" min="1" step="1" required /></div>
+            <div class="field"><label for="field-credit-price">Precio a crédito (pesos)</label><input id="field-credit-price" type="number" min="1" step="1" /></div>
+            <div class="field span-2"><label><input id="field-credit-enabled" type="checkbox" checked /> Ofrecer pago a crédito</label><small class="subtle">Al activarlo, el cliente podrá escoger entre contado y crédito en la ficha del producto.</small></div>
             <div class="field"><label for="field-stock">Unidades disponibles</label><input id="field-stock" type="number" min="0" step="1" value="0" /></div>
             <div class="field span-2"><label for="field-category">Categoría *</label><input id="field-category" list="category-options" maxlength="100" required /><datalist id="category-options"></datalist></div>
             <div class="field span-2"><label for="field-description">Descripción</label><textarea id="field-description" maxlength="5000" placeholder="Características y detalles del producto"></textarea></div>
