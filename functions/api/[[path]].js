@@ -191,13 +191,23 @@ async function adminSave(db, body) {
   const name = clean(body.name, 180);
   const category = clean(body.category, 100);
   const price = Number(body.price);
+  const offerCredit = body.offerCredit !== false;
+  const creditPrice = offerCredit ? Number(body.creditPrice || price) : price;
   const stock = Math.max(0, Math.floor(Number(body.stock) || 0));
+  if (offerCredit && (!Number.isFinite(creditPrice) || creditPrice <= 0)) return json({ error: 'El precio a credito debe ser valido.' }, 400);
   if (!name || !category || !Number.isFinite(price) || price <= 0) return json({ error: 'Nombre, categoría y precio válido son obligatorios.' }, 400);
   const old = body.id ? await db.prepare('SELECT data FROM products WHERE id = ?').bind(body.id).first() : null;
   if (body.id && !old) return json({ error: 'No se encontró el producto.' }, 404);
   const previous = old ? JSON.parse(old.data) : {};
   const slug = clean(body.slug, 180) || normalize(name).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 160);
   const image = clean(body.image, 600);
+  const cashVariant = previous.variants?.find((variant) => /contado/i.test(variant.label)) || previous.variants?.[0];
+  const creditVariant = previous.variants?.find((variant) => /credito/i.test(variant.sku) || /cr.dito/i.test(variant.label));
+  const cashSku = cashVariant?.sku || `admin-${crypto.randomUUID().slice(0, 12)}-contado`;
+  const paymentVariants = [
+    { sku: cashSku, label: 'CONTADO', price, available: stock > 0 },
+    ...(offerCredit ? [{ sku: creditVariant?.sku || `${cashSku}-credito`, label: 'CR\u00c9DITO', price: creditPrice, available: stock > 0 }] : []),
+  ];
   const categoryIcon = previous.categories?.find((item) => item.name === category)?.icon || '📦';
   const variants = previous.variants?.length
     ? previous.variants.map((variant, index) => ({ ...variant, ...(index === 0 ? { price } : {}), available: stock > 0 }))
@@ -205,10 +215,11 @@ async function adminSave(db, body) {
   const product = {
     ...previous, id: previous.id || `admin-${crypto.randomUUID()}`, slug, name,
     brand: clean(body.brand, 100), description: clean(body.description, 5000), price,
-    maxPrice: Math.max(price, Number(previous.maxPrice) || price), compareAt: Number(previous.compareAt) || price,
+    maxPrice: offerCredit ? creditPrice : price, compareAt: Number(previous.compareAt) || price,
     image, images: image ? [image] : [], categories: [{ name: category, icon: categoryIcon }], variants,
     available: stock > 0, stock, specs: previous.specs || {}, tags: previous.tags || [], source: previous.source || 'panel-admin',
   };
+  product.variants = paymentVariants;
   await db.prepare('INSERT INTO products (id, data) VALUES (?, ?) ON CONFLICT(id) DO UPDATE SET data = excluded.data').bind(product.id, JSON.stringify(product)).run();
   await refreshCatalogMeta(db);
   return json({ ok: true, product });
